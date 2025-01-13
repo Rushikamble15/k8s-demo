@@ -36,21 +36,19 @@ pipeline {
     }
 }
 
-    stage('Push Docker Images to Docker Hub') {
-    steps {
-       withDockerRegistryCredentials([credentialsId: 'docker-hub-cred']) {
-    script {
-        bat """
-            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-            docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}
-            docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}
-        """
-    }
-}
-
-    }
-}
-
+ stage('Push Docker Images to Docker Hub') {
+            steps {
+                withDockerRegistryCredentials([credentialsId: 'docker-hub-cred']) {
+                    script {
+                        bat """
+                            docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASS}
+                            docker push ${DOCKER_USERNAME}/demo-k8s-frontend:${BUILD_TAG}
+                            docker push ${DOCKER_USERNAME}/demo-k8s-backend:${BUILD_TAG}
+                        """
+                    }
+                }
+            }
+        }
         
         stage('Deploy to Kubernetes') {
             steps {
