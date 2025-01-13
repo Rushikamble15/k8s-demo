@@ -100,9 +100,11 @@ pipeline {
         }
     }
     
-    post {
-        always {
-            sh "docker system prune -f"
-        }
+   post {
+    always {
+        bat """
+            docker images ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} --format "{{.Repository}}:{{.Tag}}" | ForEach-Object { docker rmi $_ }
+            docker images ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} --format "{{.Repository}}:{{.Tag}}" | ForEach-Object { docker rmi $_ }
+        """
     }
 }
