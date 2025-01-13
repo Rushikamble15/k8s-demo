@@ -16,25 +16,26 @@ pipeline {
             }
         }
         
-        stage('Build Docker Images') {
-            parallel {
-                stage('Build Frontend') {
-                    steps {
-                        dir('frontend/todolist') {
-                            sh "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
-                        }
-                    }
-                }
-                
-                stage('Build Backend') {
-                    steps {
-                        dir('backend') {
-                            sh "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
-                        }
-                    }
+    stage('Build Docker Images') {
+    parallel {
+        stage('Build Frontend') {
+            steps {
+                dir('frontend/todolist') {
+                    bat "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
                 }
             }
         }
+        
+        stage('Build Backend') {
+            steps {
+                dir('backend') {
+                    bat "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
+                }
+            }
+        }
+    }
+}
+
         
         stage('Push Docker Images to Docker Hub') {
             steps {
