@@ -37,24 +37,18 @@ pipeline {
 }
 
     
-  stage('Push To DockerHub') {
+stage('Push Docker Images to Docker Hub') {
     steps {
-        withCredentials([usernamePassword(
-            credentialsId: 'docker-hub-cred', // Jenkins credentials ID
-            usernameVariable: 'dockerHubUser', 
-            passwordVariable: 'dockerHubPass')]) {
-            
-            // Docker login using Jenkins credentials
-            bat "echo $dockerHubPass | docker login -u $dockerHubUser --password-stdin"
-
-            // Build and tag Docker image
-            bat "docker image tag node-app:latest ${dockerHubUser}/node-app:latest"
-
-            // Push the image to Docker Hub
-            bat "docker push ${dockerHubUser}/node-app:latest"
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            bat """
+                echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                docker push %DOCKER_USER%/todo-frontend:%BUILD_TAG%
+                docker push %DOCKER_USER%/todo-backend:%BUILD_TAG%
+            """
         }
     }
 }
+
 
         
         
