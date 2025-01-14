@@ -1,14 +1,13 @@
 pipeline {
     agent any
     
-  environment {
-    DOCKER_USERNAME = 'rushikesh151999' // Docker Hub username
-    DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
-    DOCKER_CREDENTIALS = credentials('docker-hub-cred') // Docker Hub credentials
-    KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes credentials
-    BUILD_TAG = "v${BUILD_NUMBER}" // Automatically assigned version tag
-}
-
+    environment {
+        DOCKER_USERNAME = 'rushikesh151999' // Docker Hub username
+        DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
+        DOCKER_CREDENTIALS = credentials('docker-hub-cred') // Jenkins credentials for Docker Hub
+        KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes config for kubectl
+        BUILD_TAG = "v${BUILD_NUMBER}" // Automatically assigned version tag
+    }
     
     stages {
         stage('Checkout Code') {
@@ -38,17 +37,17 @@ pipeline {
 }
 
     
-// stage('Push Docker Images to Docker Hub') {
-//     steps {
-//         withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-//             bat """
-//                 echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-//                 docker push %DOCKER_USER%/todo-frontend:%BUILD_TAG%
-//                 docker push %DOCKER_USER%/todo-backend:%BUILD_TAG%
-//             """
-//         }
-//     }
-// }
+stage('Push Docker Images to Docker Hub') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            bat """
+                echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                docker push %DOCKER_USER%/todo-frontend:%BUILD_TAG%
+                docker push %DOCKER_USER%/todo-backend:%BUILD_TAG%
+            """
+        }
+    }
+}
 
 
         
@@ -67,51 +66,55 @@ pipeline {
 
 
         
-  
-
+       stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'kubernetes-config']) {
+                    script {
+                        bat """
+                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/frontend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/backend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml"
+                            
+                            kubectl apply -f k8s/mysql/secret.yaml
+                            kubectl apply -f k8s/mysql/deployment.yaml
+                            kubectl apply -f k8s/mysql/service.yaml
+                            kubectl apply -f k8s/backend/deployment.yaml
+                            kubectl apply -f k8s/backend/service.yaml
+                            kubectl apply -f k8s/frontend/deployment.yaml
+                            kubectl apply -f k8s/frontend/service.yaml
+                        """
+                    }
+                }
+            }
+        }
         
         stage('Deploy Monitoring') {
-    steps {
-        withKubeConfig([credentialsId: 'kubernetes-config']) {
-            bat """
-                kubectl apply -f k8s\\monitoring\\prometheus-configmap.yaml
-                kubectl apply -f k8s\\monitoring\\prometheus-deployment.yaml
-                kubectl apply -f k8s\\monitoring\\prometheus-service.yaml
+            steps {
+                withKubeConfig([credentialsId: 'kubernetes-config']) {
+                    sh """
+                        kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
+                        kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
+                        kubectl apply -f k8s/monitoring/prometheus-service.yaml
 
-                kubectl apply -f k8s\\monitoring\\grafana-deployment.yaml
-                kubectl apply -f k8s\\monitoring\\grafana-service.yaml
-            """
+                        kubectl apply -f k8s/monitoring/grafana-deployment.yaml
+                        kubectl apply -f k8s/monitoring/grafana-service.yaml
+                    """
+                }
+            }
         }
-    }
-}
-
         
-stage('Cleanup Old Images and Pods') {
-    steps {
-        script {
-            // Clean up Docker images (keep only the latest one)
-            bat """
-                for /f "tokens=*" %%i in ('docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Tag}}" ^| sort /R ^| findstr /R ".*" ^| more +2') do docker rmi ${DOCKER_USERNAME}/todo-frontend:%%i
-                for /f "tokens=*" %%i in ('docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Tag}}" ^| sort /R ^| findstr /R ".*" ^| more +2') do docker rmi ${DOCKER_USERNAME}/todo-backend:%%i
-            """
-
-            // Clean up Kubernetes resources: Pods, Services, and Deployments
-            withKubeConfig([credentialsId: 'kubernetes-config']) {
-                bat """
-                    kubectl delete pods --selector=app=todo-frontend --field-selector=status.phase=Succeeded
-                    kubectl delete pods --selector=app=todo-backend --field-selector=status.phase=Succeeded
-                    
-                    kubectl delete deployments --selector=app=todo-frontend
-                    kubectl delete deployments --selector=app=todo-backend
-                    
-                    kubectl delete services --selector=app=todo-frontend
-                    kubectl delete services --selector=app=todo-backend
-                """
+        stage('Cleanup Old Images') {
+            steps {
+                script {
+                    sh """
+                        docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Tag}}" | sort -r | tail -n +3 | xargs -I {} docker rmi ${DOCKER_USERNAME}/todo-frontend:{}
+                        docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Tag}}" | sort -r | tail -n +3 | xargs -I {} docker rmi ${DOCKER_USERNAME}/todo-backend:{}
+                    """
+                }
             }
         }
     }
-}
-
     
 post {
         always {
