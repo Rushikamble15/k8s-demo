@@ -36,6 +36,12 @@ pipeline {
     }
 }
 
+        stage('Test Docker Access') {
+    steps {
+        bat 'docker --version'
+    }
+}
+
 
   stage("Push To DockerHub") {
             steps {
