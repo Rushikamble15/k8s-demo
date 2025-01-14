@@ -25,7 +25,7 @@ pipeline {
                         }
                     }
                 }
-                
+
                 stage('Build Backend') {
                     steps {
                         dir('backend') {
@@ -35,18 +35,6 @@ pipeline {
                 }
             }
         }
-        
-        // stage('Push Docker Images to Docker Hub') {
-        //     steps {
-        //         withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-        //             bat """
-        //                 echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-        //                 docker push %DOCKER_USER%/todo-frontend:%BUILD_TAG%
-        //                 docker push %DOCKER_USER%/todo-backend:%BUILD_TAG%
-        //             """
-        //         }
-        //     }
-        // }
         
         stage('Update Kubernetes Deployment') {
             steps {
@@ -67,14 +55,13 @@ pipeline {
                         kubectl apply -f k8s\\monitoring\\prometheus-configmap.yaml
                         kubectl apply -f k8s\\monitoring\\prometheus-deployment.yaml
                         kubectl apply -f k8s\\monitoring\\prometheus-service.yaml
-
                         kubectl apply -f k8s\\monitoring\\grafana-deployment.yaml
                         kubectl apply -f k8s\\monitoring\\grafana-service.yaml
                     """
                 }
             }
         }
-        
+
         stage('Cleanup Old Images and Pods') {
             steps {
                 script {
