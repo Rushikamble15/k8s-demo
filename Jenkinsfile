@@ -36,6 +36,23 @@ pipeline {
     }
 }
 
+
+ stage('Push Docker Images to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    script {
+                        // Docker login to Docker Hub
+                        bat """
+                            echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                            docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}
+                            docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}
+                        """
+                    }
+                }
+            }
+        }
+
+        
          stage('Update Kubernetes Deployment') {
             steps {
                 script {
