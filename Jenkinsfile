@@ -38,15 +38,15 @@ pipeline {
 
 
         
-        stage('Deploy to Kubernetes') {
+       stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
                     script {
                         bat """
-                            sed -i 's|\${DOCKER_USERNAME}|${DOCKER_USERNAME}|g' k8s/frontend/deployment.yaml
-                            sed -i 's|\${BUILD_TAG}|${BUILD_TAG}|g' k8s/frontend/deployment.yaml
-                            sed -i 's|\${DOCKER_USERNAME}|${DOCKER_USERNAME}|g' k8s/backend/deployment.yaml
-                            sed -i 's|\${BUILD_TAG}|${BUILD_TAG}|g' k8s/backend/deployment.yaml
+                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/frontend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/backend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml"
                             
                             kubectl apply -f k8s/mysql/secret.yaml
                             kubectl apply -f k8s/mysql/deployment.yaml
