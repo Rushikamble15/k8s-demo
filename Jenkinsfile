@@ -125,3 +125,19 @@ post {
         }
     }
 }
+success {
+            bat 'echo "Pipeline completed successfully!"'
+        }
+        failure {
+            bat '''
+                echo "Pipeline failed! Cleaning up resources..."
+                kubectl delete deployment todo-frontend --ignore-not-found=true
+                kubectl delete deployment todo-backend --ignore-not-found=true
+                kubectl delete deployment mysql --ignore-not-found=true
+                kubectl delete service todo-frontend --ignore-not-found=true
+                kubectl delete service todo-backend --ignore-not-found=true
+                kubectl delete service mysql --ignore-not-found=true
+            '''
+        }
+    }
+}
