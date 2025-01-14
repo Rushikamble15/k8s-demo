@@ -83,25 +83,34 @@ pipeline {
                         for /f "tokens=*" %%i in ('docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Tag}}" ^| sort /R ^| findstr /R ".*" ^| more +2') do docker rmi ${DOCKER_USERNAME}/todo-frontend:%%i
                         for /f "tokens=*" %%i in ('docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Tag}}" ^| sort /R ^| findstr /R ".*" ^| more +2') do docker rmi ${DOCKER_USERNAME}/todo-backend:%%i
                     """
-                    
-                    // Clean up Kubernetes resources: Pods, Services, and Deployments
+
+                    // Clean up Kubernetes resources: Keep only the latest Pods, Deployments, and Services
                     withKubeConfig([credentialsId: 'kubernetes-config']) {
                         bat """
-                            kubectl delete pods --selector=app=todo-frontend --field-selector=status.phase=Succeeded
-                            kubectl delete pods --selector=app=todo-backend --field-selector=status.phase=Succeeded
+                            # Delete older frontend pods, keeping the latest one
+                            kubectl get pods --selector=app=todo-frontend --sort-by=.metadata.creationTimestamp --no-headers | tail -n +2 | awk '{print $1}' | xargs kubectl delete pod
+
+                            # Delete older backend pods, keeping the latest one
+                            kubectl get pods --selector=app=todo-backend --sort-by=.metadata.creationTimestamp --no-headers | tail -n +2 | awk '{print $1}' | xargs kubectl delete pod
                             
-                            kubectl delete deployments --selector=app=todo-frontend
-                            kubectl delete deployments --selector=app=todo-backend
-                            
-                            kubectl delete services --selector=app=todo-frontend
-                            kubectl delete services --selector=app=todo-backend
+                            # Delete older frontend deployments, keeping the latest one
+                            kubectl get deployments --selector=app=todo-frontend --sort-by=.metadata.creationTimestamp --no-headers | tail -n +2 | awk '{print $1}' | xargs kubectl delete deployment
+
+                            # Delete older backend deployments, keeping the latest one
+                            kubectl get deployments --selector=app=todo-backend --sort-by=.metadata.creationTimestamp --no-headers | tail -n +2 | awk '{print $1}' | xargs kubectl delete deployment
+
+                            # Delete older frontend services, keeping the latest one
+                            kubectl get services --selector=app=todo-frontend --no-headers | tail -n +2 | awk '{print $1}' | xargs kubectl delete service
+
+                            # Delete older backend services, keeping the latest one
+                            kubectl get services --selector=app=todo-backend --no-headers | tail -n +2 | awk '{print $1}' | xargs kubectl delete service
                         """
                     }
                 }
             }
         }
     }
-    
+
     post {
         always {
             bat """
