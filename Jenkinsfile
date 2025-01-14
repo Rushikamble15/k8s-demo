@@ -37,17 +37,17 @@ pipeline {
 }
 
     
-stage('Push Docker Images to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    bat """
-                        echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                        docker push %DOCKER_USER%/todo-frontend:%BUILD_TAG%
-                        docker push %DOCKER_USER%/todo-backend:%BUILD_TAG%
-                    """
-                }
-            }
-        }
+// stage('Push Docker Images to Docker Hub') {
+//             steps {
+//                 withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+//                     bat """
+//                         echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+//                         docker push %DOCKER_USER%/todo-frontend:%BUILD_TAG%
+//                         docker push %DOCKER_USER%/todo-backend:%BUILD_TAG%
+//                     """
+//                 }
+//             }
+//         }
 
 
         
