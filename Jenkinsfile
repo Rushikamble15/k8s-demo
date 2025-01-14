@@ -37,21 +37,27 @@ pipeline {
 }
 
 
- stage('Push Docker Images to Docker Hub') {
+  stage("Push To DockerHub") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    script {
-                        // Docker login to Docker Hub
-                        bat """
-                            echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
-                            docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}
-                            docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}
-                        """
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-cred', // Reference your Docker Hub credentials
+                    usernameVariable: 'dockerHubUser', // The username variable
+                    passwordVariable: 'dockerHubPass')]) { // The password variable
+                    
+                    // Docker login to Docker Hub
+                    bat "echo $dockerHubPass | docker login -u $dockerHubUser --password-stdin"
+                    
+                    // Tag and push frontend image
+                    bat "docker image tag ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ${dockerHubUser}/todo-frontend:${BUILD_TAG}"
+                    bat "docker push ${dockerHubUser}/todo-frontend:${BUILD_TAG}"
+                    
+                    // Tag and push backend image
+                    bat "docker image tag ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ${dockerHubUser}/todo-backend:${BUILD_TAG}"
+                    bat "docker push ${dockerHubUser}/todo-backend:${BUILD_TAG}"
                 }
             }
         }
-
+        
         
          stage('Update Kubernetes Deployment') {
             steps {
