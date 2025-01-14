@@ -67,28 +67,21 @@ pipeline {
 
 
         
-       stage('Deploy to Kubernetes') {
-            steps {
-                withKubeConfig([credentialsId: 'kubernetes-config']) {
-                    script {
-                        bat """
-                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/frontend/deployment.yaml"
-                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml"
-                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/backend/deployment.yaml"
-                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml"
-                            
-                            kubectl apply -f k8s/mysql/secret.yaml
-                            kubectl apply -f k8s/mysql/deployment.yaml
-                            kubectl apply -f k8s/mysql/service.yaml
-                            kubectl apply -f k8s/backend/deployment.yaml
-                            kubectl apply -f k8s/backend/service.yaml
-                            kubectl apply -f k8s/frontend/deployment.yaml
-                            kubectl apply -f k8s/frontend/service.yaml
-                        """
-                    }
-                }
-            }
+       stage('Deploy Monitoring') {
+    steps {
+        withKubeConfig([credentialsId: 'kubernetes-config']) {
+            bat '''
+                kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
+                kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
+                kubectl apply -f k8s/monitoring/prometheus-service.yaml
+
+                kubectl apply -f k8s/monitoring/grafana-deployment.yaml
+                kubectl apply -f k8s/monitoring/grafana-service.yaml
+            '''
         }
+    }
+}
+
         
         stage('Deploy Monitoring') {
             steps {
