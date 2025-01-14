@@ -36,33 +36,26 @@ pipeline {
     }
 }
 
-        stage('Test Docker Access') {
+    
+  stage('Push To DockerHub') {
     steps {
-        bat 'docker --version'
+        withCredentials([usernamePassword(
+            credentialsId: 'docker-hub-cred', // Jenkins credentials ID
+            usernameVariable: 'dockerHubUser', 
+            passwordVariable: 'dockerHubPass')]) {
+            
+            // Docker login using Jenkins credentials
+            bat "echo $dockerHubPass | docker login -u $dockerHubUser --password-stdin"
+
+            // Build and tag Docker image
+            bat "docker image tag node-app:latest ${dockerHubUser}/node-app:latest"
+
+            // Push the image to Docker Hub
+            bat "docker push ${dockerHubUser}/node-app:latest"
+        }
     }
 }
 
-
-  stage("Push To DockerHub") {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-cred', // Reference your Docker Hub credentials
-                    usernameVariable: 'dockerHubUser', // The username variable
-                    passwordVariable: 'dockerHubPass')]) { // The password variable
-                    
-                    // Docker login to Docker Hub
-                    bat "echo $dockerHubPass | docker login -u $dockerHubUser --password-stdin"
-                    
-                    // Tag and push frontend image
-                    bat "docker image tag ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ${dockerHubUser}/todo-frontend:${BUILD_TAG}"
-                    bat "docker push ${dockerHubUser}/todo-frontend:${BUILD_TAG}"
-                    
-                    // Tag and push backend image
-                    bat "docker image tag ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ${dockerHubUser}/todo-backend:${BUILD_TAG}"
-                    bat "docker push ${dockerHubUser}/todo-backend:${BUILD_TAG}"
-                }
-            }
-        }
         
         
          stage('Update Kubernetes Deployment') {
