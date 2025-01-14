@@ -84,18 +84,7 @@ pipeline {
                 }
             }
         }
-
-    //     stage('Cleanup Old Images') {
-    //         steps {
-    //             script {
-    //                 sh """
-    //                     docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Tag}}" | sort -r | tail -n +3 | xargs -I {} docker rmi ${DOCKER_USERNAME}/todo-frontend:{}
-    //                     docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Tag}}" | sort -r | tail -n +3 | xargs -I {} docker rmi ${DOCKER_USERNAME}/todo-backend:{}
-    //                 """
-    //             }
-    //         }
-    //     }
-    // }
+    }
 
     post {
         always {
