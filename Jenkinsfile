@@ -1,13 +1,14 @@
 pipeline {
     agent any
     
-    environment {
-        DOCKER_USERNAME = 'rushikesh151999' // Docker Hub username
-        DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
-        DOCKER_CREDENTIALS = credentials('docker-hub-cred') // Jenkins credentials for Docker Hub
-        KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes config for kubectl
-        BUILD_TAG = "v${BUILD_NUMBER}" // Automatically assigned version tag
-    }
+  environment {
+    DOCKER_USERNAME = 'rushikesh151999' // Docker Hub username
+    DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
+    DOCKER_CREDENTIALS = credentials('docker-hub-cred') // Docker Hub credentials
+    KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes credentials
+    BUILD_TAG = "v${BUILD_NUMBER}" // Automatically assigned version tag
+}
+
     
     stages {
         stage('Checkout Code') {
