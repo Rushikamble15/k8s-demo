@@ -86,13 +86,28 @@ pipeline {
 }
 
         
-        stage('Cleanup Old Images') {
+stage('Cleanup Old Images and Pods') {
     steps {
         script {
+            // Clean up Docker images (keep only the latest one)
             bat """
                 for /f "tokens=*" %%i in ('docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Tag}}" ^| sort /R ^| findstr /R ".*" ^| more +2') do docker rmi ${DOCKER_USERNAME}/todo-frontend:%%i
                 for /f "tokens=*" %%i in ('docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Tag}}" ^| sort /R ^| findstr /R ".*" ^| more +2') do docker rmi ${DOCKER_USERNAME}/todo-backend:%%i
             """
+
+            // Clean up Kubernetes resources: Pods, Services, and Deployments
+            withKubeConfig([credentialsId: 'kubernetes-config']) {
+                bat """
+                    kubectl delete pods --selector=app=todo-frontend --field-selector=status.phase=Succeeded
+                    kubectl delete pods --selector=app=todo-backend --field-selector=status.phase=Succeeded
+                    
+                    kubectl delete deployments --selector=app=todo-frontend
+                    kubectl delete deployments --selector=app=todo-backend
+                    
+                    kubectl delete services --selector=app=todo-frontend
+                    kubectl delete services --selector=app=todo-backend
+                """
+            }
         }
     }
 }
