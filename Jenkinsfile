@@ -42,7 +42,7 @@ pipeline {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
                     script {
-                        sh """
+                        bat """
                             sed -i 's|\${DOCKER_USERNAME}|${DOCKER_USERNAME}|g' k8s/frontend/deployment.yaml
                             sed -i 's|\${BUILD_TAG}|${BUILD_TAG}|g' k8s/frontend/deployment.yaml
                             sed -i 's|\${DOCKER_USERNAME}|${DOCKER_USERNAME}|g' k8s/backend/deployment.yaml
