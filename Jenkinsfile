@@ -89,20 +89,20 @@ pipeline {
             }
         }
         
-        stage('Deploy Monitoring') {
-            steps {
-                withKubeConfig([credentialsId: 'kubernetes-config']) {
-                    sh """
-                        kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
-                        kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
-                        kubectl apply -f k8s/monitoring/prometheus-service.yaml
-
-                        kubectl apply -f k8s/monitoring/grafana-deployment.yaml
-                        kubectl apply -f k8s/monitoring/grafana-service.yaml
-                    """
-                }
-            }
+       stage('Deploy Monitoring') {
+    steps {
+        withKubeConfig([credentialsId: 'kubernetes-config']) {
+            bat '''
+                kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
+                kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
+                kubectl apply -f k8s/monitoring/prometheus-service.yaml
+                kubectl apply -f k8s/monitoring/grafana-deployment.yaml
+                kubectl apply -f k8s/monitoring/grafana-service.yaml
+            '''
         }
+    }
+}
+
         
         stage('Cleanup Old Images') {
             steps {
