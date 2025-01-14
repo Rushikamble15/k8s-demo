@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_USERNAME = 'rushikesh151999' // Docker Hub username
         DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
@@ -8,51 +8,35 @@ pipeline {
         KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes config for kubectl
         BUILD_TAG = "v${BUILD_NUMBER}" // Automatically assigned version tag
     }
-    
+
     stages {
         stage('Checkout Code') {
             steps {
-               git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Rushikamble15/k8s-demo.git'
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Rushikamble15/k8s-demo.git'
             }
         }
-        
-    stage('Build Docker Images') {
-    parallel {
-        stage('Build Frontend') {
-            steps {
-                dir('frontend/todolist') {
-                    bat "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
+
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build Frontend') {
+                    steps {
+                        dir('frontend/todolist') {
+                            bat "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
+                        }
+                    }
+                }
+
+                stage('Build Backend') {
+                    steps {
+                        dir('backend') {
+                            bat "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
+                        }
+                    }
                 }
             }
         }
-        
-        stage('Build Backend') {
-            steps {
-                dir('backend') {
-                    bat "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
-                }
-            }
-        }
-    }
-}
 
-    
-// stage('Push Docker Images to Docker Hub') {
-//             steps {
-//                 withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-//                     bat """
-//                         echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-//                         docker push %DOCKER_USER%/todo-frontend:%BUILD_TAG%
-//                         docker push %DOCKER_USER%/todo-backend:%BUILD_TAG%
-//                     """
-//                 }
-//             }
-//         }
-
-
-        
-        
-         stage('Update Kubernetes Deployment') {
+        stage('Update Kubernetes Deployment') {
             steps {
                 script {
                     // Replace ${DOCKER_REGISTRY} and ${BUILD_TAG} in the Kubernetes YAML files using PowerShell
@@ -64,9 +48,7 @@ pipeline {
             }
         }
 
-
-        
-       stage('Deploy to Kubernetes') {
+        stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
                     script {
@@ -88,22 +70,21 @@ pipeline {
                 }
             }
         }
-        
-       stage('Deploy Monitoring') {
-    steps {
-        withKubeConfig([credentialsId: 'kubernetes-config']) {
-            bat '''
-                kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
-                kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
-                kubectl apply -f k8s/monitoring/prometheus-service.yaml
-                kubectl apply -f k8s/monitoring/grafana-deployment.yaml
-                kubectl apply -f k8s/monitoring/grafana-service.yaml
-            '''
-        }
-    }
-}
 
-        
+        stage('Deploy Monitoring') {
+            steps {
+                withKubeConfig([credentialsId: 'kubernetes-config']) {
+                    bat '''
+                        kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
+                        kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
+                        kubectl apply -f k8s/monitoring/prometheus-service.yaml
+                        kubectl apply -f k8s/monitoring/grafana-deployment.yaml
+                        kubectl apply -f k8s/monitoring/grafana-service.yaml
+                    '''
+                }
+            }
+        }
+
         stage('Cleanup Old Images') {
             steps {
                 script {
@@ -115,19 +96,19 @@ pipeline {
             }
         }
     }
-    
-post {
+
+    post {
         always {
             bat """
                 docker images ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} --format "{{.Repository}}:{{.Tag}}" | ForEach-Object { docker rmi $_ }
                 docker images ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} --format "{{.Repository}}:{{.Tag}}" | ForEach-Object { docker rmi $_ }
             """
         }
-    }
-}
-success {
+
+        success {
             bat 'echo "Pipeline completed successfully!"'
         }
+
         failure {
             bat '''
                 echo "Pipeline failed! Cleaning up resources..."
