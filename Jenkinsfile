@@ -36,17 +36,18 @@ pipeline {
         }
 
         stage('Login to Docker Hub') {
-            steps {
-                script {
-                    // Login to Docker Hub using the provided credentials
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        bat """
-                            echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
-                        """
-                    }
-                }
+    steps {
+        script {
+            // Using 'withCredentials' to securely pass credentials without exposing them in logs
+            withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                bat """
+                    echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
+                """
             }
         }
+    }
+}
+
 
         stage('Push Docker Images to Docker Hub') {
             parallel {
