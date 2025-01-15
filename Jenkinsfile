@@ -2,20 +2,19 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = "localhost:5000"  // Local registry
-        BUILD_TAG = "v${BUILD_NUMBER}"       // Jenkins build tag
-        KUBE_CONFIG = credentials('kubernetes-config')
+        DOCKER_REGISTRY = "localhost:5000" // Docker Desktop local registry
+        BUILD_TAG = "v${BUILD_NUMBER}"     // Jenkins build tag
+        KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes credentials for kubectl
     }
 
-   stages {
+    stages {
         stage('Checkout Code') {
             steps {
                 git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Rushikamble15/k8s-demo.git'
             }
         }
 
-
-        stage('Build and Push Images') {
+        stage('Build and Push Docker Images') {
             parallel {
                 stage('Frontend') {
                     steps {
@@ -46,7 +45,7 @@ pipeline {
         stage('Update Kubernetes Manifests') {
             steps {
                 script {
-                    // Use powershell to replace placeholders with actual values in the YAML files
+                    // Replace placeholders in Kubernetes deployment files with actual image values
                     powershell """
                         (Get-Content k8s/backend/deployment.yaml) -replace 'image: .*', 'image: ${DOCKER_REGISTRY}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
                         (Get-Content k8s/frontend/deployment.yaml) -replace 'image: .*', 'image: ${DOCKER_REGISTRY}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
