@@ -20,7 +20,8 @@ pipeline {
                 stage('Build Frontend') {
                     steps {
                         dir('frontend/todolist') {
-                            sh "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
+                            // Use wsl to invoke the shell command within the WSL environment
+                            bat "wsl docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
                         }
                     }
                 }
@@ -28,7 +29,7 @@ pipeline {
                 stage('Build Backend') {
                     steps {
                         dir('backend') {
-                            sh "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
+                            bat "wsl docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
                         }
                     }
                 }
@@ -40,8 +41,8 @@ pipeline {
                 script {
                     // Using 'withCredentials' to securely pass credentials without exposing them in logs
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh """
-                            echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
+                        bat """
+                            wsl echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
                         """
                     }
                 }
@@ -53,7 +54,7 @@ pipeline {
                 stage('Push Frontend') {
                     steps {
                         script {
-                            sh "docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
+                            bat "wsl docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
                         }
                     }
                 }
@@ -61,7 +62,7 @@ pipeline {
                 stage('Push Backend') {
                     steps {
                         script {
-                            sh "docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
+                            bat "wsl docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
                         }
                     }
                 }
@@ -71,18 +72,18 @@ pipeline {
 
     post {
         always {
-            sh """
-                docker rmi ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}
-                docker rmi ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}
+            bat """
+                wsl docker rmi ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}
+                wsl docker rmi ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}
             """
         }
 
         success {
-            sh 'echo "Pipeline completed successfully!"'
+            bat 'echo "Pipeline completed successfully!"'
         }
 
         failure {
-            sh 'echo "Pipeline failed!"'
+            bat 'echo "Pipeline failed!"'
         }
     }
 }
