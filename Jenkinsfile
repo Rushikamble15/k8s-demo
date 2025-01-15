@@ -4,7 +4,6 @@ pipeline {
     environment {
         DOCKER_REGISTRY = "localhost:5000"  // Local registry
         BUILD_TAG = "v${BUILD_NUMBER}"       // Jenkins build tag
-        GIT_REPO = 'https://github.com/Rushikamble15/k8s-demo.git'
         KUBE_CONFIG = credentials('kubernetes-config')
     }
 
