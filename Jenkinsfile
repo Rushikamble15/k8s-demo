@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = "localhost:5000" // Docker Desktop local registry
+        DOCKER_REGISTRY = "10.0.0.68:5000" // IP from ipconfig
         BUILD_TAG = "v${BUILD_NUMBER}"     // Jenkins build tag
         KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes credentials for kubectl
     }
