@@ -20,7 +20,7 @@ pipeline {
                 stage('Build Frontend') {
                     steps {
                         dir('frontend/todolist') {
-                            bat "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
+                            sh "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
                         }
                     }
                 }
@@ -28,7 +28,7 @@ pipeline {
                 stage('Build Backend') {
                     steps {
                         dir('backend') {
-                            bat "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
+                            sh "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
                         }
                     }
                 }
@@ -36,25 +36,24 @@ pipeline {
         }
 
         stage('Login to Docker Hub') {
-    steps {
-        script {
-            // Using 'withCredentials' to securely pass credentials without exposing them in logs
-            withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                bat """
-                    echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
-                """
+            steps {
+                script {
+                    // Using 'withCredentials' to securely pass credentials without exposing them in logs
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh """
+                            echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
+                        """
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Push Docker Images to Docker Hub') {
             parallel {
                 stage('Push Frontend') {
                     steps {
                         script {
-                            bat "docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
+                            sh "docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
                         }
                     }
                 }
@@ -62,7 +61,7 @@ pipeline {
                 stage('Push Backend') {
                     steps {
                         script {
-                            bat "docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
+                            sh "docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
                         }
                     }
                 }
@@ -72,18 +71,18 @@ pipeline {
 
     post {
         always {
-            bat """
-                docker images ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} --format "{{.Repository}}:{{.Tag}}" | ForEach-Object { docker rmi $_ }
-                docker images ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} --format "{{.Repository}}:{{.Tag}}" | ForEach-Object { docker rmi $_ }
+            sh """
+                docker rmi ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}
+                docker rmi ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}
             """
         }
 
         success {
-            bat 'echo "Pipeline completed successfully!"'
+            sh 'echo "Pipeline completed successfully!"'
         }
 
         failure {
-            bat 'echo "Pipeline failed!"'
+            sh 'echo "Pipeline failed!"'
         }
     }
 }
