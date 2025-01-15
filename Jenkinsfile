@@ -8,12 +8,13 @@ pipeline {
         KUBE_CONFIG = credentials('kubernetes-config')
     }
 
-    stages {
+   stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: '%GIT_REPO%'
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Rushikamble15/k8s-demo.git'
             }
         }
+
 
         stage('Build and Push Images') {
             parallel {
