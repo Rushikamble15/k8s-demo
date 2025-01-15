@@ -2,9 +2,11 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = "10.0.0.68:5000" // IP from ipconfig
-        BUILD_TAG = "v${BUILD_NUMBER}"     // Jenkins build tag
-        KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes credentials for kubectl
+        DOCKER_USERNAME = 'rushikesh151999' // Docker Hub username
+        DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
+        DOCKER_CREDENTIALS = credentials('docker-hub-cred') // Jenkins credentials for Docker Hub
+        KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes config for kubectl
+        BUILD_TAG = "v${BUILD_NUMBER}" // Automatically assigned version tag
     }
 
     stages {
@@ -14,121 +16,110 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Images') {
+        stage('Build Docker Images') {
             parallel {
-                stage('Frontend') {
+                stage('Build Frontend') {
                     steps {
                         dir('frontend/todolist') {
-                            bat """
-                                docker build -t ${DOCKER_REGISTRY}/todo-frontend:${BUILD_TAG} -t ${DOCKER_REGISTRY}/todo-frontend:latest .
-                                docker push ${DOCKER_REGISTRY}/todo-frontend:${BUILD_TAG}
-                                docker push ${DOCKER_REGISTRY}/todo-frontend:latest
-                            """
+                            bat "docker build -t ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG} ."
                         }
                     }
                 }
 
-                stage('Backend') {
+                stage('Build Backend') {
                     steps {
                         dir('backend') {
-                            bat """
-                                docker build -t ${DOCKER_REGISTRY}/todo-backend:${BUILD_TAG} -t ${DOCKER_REGISTRY}/todo-backend:latest .
-                                docker push ${DOCKER_REGISTRY}/todo-backend:${BUILD_TAG}
-                                docker push ${DOCKER_REGISTRY}/todo-backend:latest
-                            """
+                            bat "docker build -t ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG} ."
                         }
                     }
                 }
             }
         }
 
-        stage('Update Kubernetes Manifests') {
+        stage('Update Kubernetes Deployment') {
             steps {
                 script {
-                    // Replace placeholders in Kubernetes deployment files with actual image values
+                    // Replace ${DOCKER_REGISTRY} and ${BUILD_TAG} in the Kubernetes YAML files using PowerShell
                     powershell """
-                        (Get-Content k8s/backend/deployment.yaml) -replace 'image: .*', 'image: ${DOCKER_REGISTRY}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
-                        (Get-Content k8s/frontend/deployment.yaml) -replace 'image: .*', 'image: ${DOCKER_REGISTRY}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
+                        (Get-Content k8s/backend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-backend:.*', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
+                        (Get-Content k8s/frontend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-frontend:.*', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
                     """
                 }
             }
         }
 
-        stage('Deploy Application') {
+        stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
-                    bat """
-                        kubectl apply -f k8s/mysql/secret.yaml
-                        kubectl apply -f k8s/mysql/deployment.yaml
-                        kubectl apply -f k8s/mysql/service.yaml
-                        kubectl apply -f k8s/backend/deployment.yaml
-                        kubectl apply -f k8s/backend/service.yaml
-                        kubectl apply -f k8s/frontend/deployment.yaml
-                        kubectl apply -f k8s/frontend/service.yaml
-                    """
+                    script {
+                        bat """
+                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/frontend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/backend/deployment.yaml"
+                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml"
+                            
+
+                            kubectl apply -f k8s/mysql/secret.yaml
+                            kubectl apply -f k8s/mysql/deployment.yaml
+                            kubectl apply -f k8s/mysql/service.yaml
+                            kubectl apply -f k8s/backend/deployment.yaml
+                            kubectl apply -f k8s/backend/service.yaml
+                            kubectl apply -f k8s/frontend/deployment.yaml
+                            kubectl apply -f k8s/frontend/service.yaml
+                        """
+                    }
                 }
             }
         }
 
-        stage('Deploy Monitoring Stack') {
+        stage('Deploy Monitoring') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
-                    bat """
-                        kubectl apply -f k8s/monitoring/namespace.yaml
+                    bat '''
                         kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
                         kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
                         kubectl apply -f k8s/monitoring/prometheus-service.yaml
                         kubectl apply -f k8s/monitoring/grafana-deployment.yaml
                         kubectl apply -f k8s/monitoring/grafana-service.yaml
-                        kubectl apply -f k8s/monitoring/kubernetes-dashboard.yaml
-                    """
+                    '''
                 }
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                bat """
-                    kubectl wait --for=condition=available deployment/todo-frontend --timeout=300s
-                    kubectl wait --for=condition=available deployment/todo-backend --timeout=300s
-                    kubectl wait --for=condition=available deployment/mysql --timeout=300s
-                    kubectl wait --for=condition=available deployment/prometheus --timeout=300s -n monitoring
-                    kubectl wait --for=condition=available deployment/grafana --timeout=300s -n monitoring
-                """
             }
         }
     }
 
     post {
-        success {
+        always {
+            // Remove old frontend images (excluding the current build)
             bat """
-                echo "Pipeline completed successfully!"
-                echo "Access your applications at:"
-                echo "Frontend: http://localhost:30080"
-                echo "Backend: http://localhost:30081"
-                echo "Grafana: http://localhost:30300"
-                echo "Prometheus: http://localhost:30090"
-                echo "Kubernetes Dashboard: http://localhost:30000"
+                docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Repository}}:{{.Tag}}" | ForEach-Object {
+                    if ($_ -ne '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}') {
+                        docker rmi $_
+                    }
+                }
+                
+                // Remove old backend images (excluding the current build)
+                docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Repository}}:{{.Tag}}" | ForEach-Object {
+                    if ($_ -ne '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}') {
+                        docker rmi $_
+                    }
+                }
             """
+        }
+
+        success {
+            bat 'echo "Pipeline completed successfully!"'
         }
 
         failure {
-            bat """
-                echo "Pipeline failed! Collecting diagnostics..."
-                kubectl get pods -A
-                kubectl describe pods -l app=todo-frontend
-                kubectl describe pods -l app=todo-backend
-                kubectl logs -l app=todo-frontend --tail=100
-                kubectl logs -l app=todo-backend --tail=100
-            """
-        }
-
-        always {
-            // Cleanup local Docker images to save space
-            bat """
-                docker rmi ${DOCKER_REGISTRY}/todo-frontend:${BUILD_TAG} || true
-                docker rmi ${DOCKER_REGISTRY}/todo-backend:${BUILD_TAG} || true
-            """
+            bat '''
+                echo "Pipeline failed! Cleaning up resources..."
+                kubectl delete deployment todo-frontend --ignore-not-found=true
+                kubectl delete deployment todo-backend --ignore-not-found=true
+                kubectl delete deployment mysql --ignore-not-found=true
+                kubectl delete service todo-frontend --ignore-not-found=true
+                kubectl delete service todo-backend --ignore-not-found=true
+                kubectl delete service mysql --ignore-not-found=true
+            '''
         }
     }
 }
