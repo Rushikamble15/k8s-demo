@@ -51,24 +51,33 @@ pipeline {
             }
         }
         
-       stage('Update Kubernetes Deployment') {
+      stage('Update Kubernetes Deployment') {
     steps {
         script {
-            // Replace backend image name with the correct Docker Hub image and tag
+            // Update backend deployment image
             powershell """
-    # Update backend deployment image
-    (Get-Content k8s/backend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-backend:.*', '${env.DOCKER_USERNAME}/todo-backend:${env.BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
+                \$backendYaml = Get-Content k8s/backend/deployment.yaml -Raw
+                \$backendUpdated = \$backendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-backend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}'
+                \$backendUpdated | Set-Content k8s/backend/deployment.yaml -Force
 
-    # Update frontend deployment image
-    (Get-Content k8s/frontend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-frontend:.*', '${env.DOCKER_USERNAME}/todo-frontend:${env.BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
+                \$frontendYaml = Get-Content k8s/frontend/deployment.yaml -Raw
+                \$frontendUpdated = \$frontendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-frontend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}'
+                \$frontendUpdated | Set-Content k8s/frontend/deployment.yaml -Force
 
-    # Debugging: Print the updated YAML files
-    Write-Host "Updated backend deployment YAML"
-    Get-Content k8s/backend/deployment.yaml
-    Write-Host "Updated frontend deployment YAML"
-    Get-Content k8s/frontend/deployment.yaml
-"""
+                # Print the updated content for verification
+                Write-Host "Updated backend deployment YAML:"
+                Get-Content k8s/backend/deployment.yaml
+                Write-Host "Updated frontend deployment YAML:"
+                Get-Content k8s/frontend/deployment.yaml
 
+                # Verify the substitutions
+                if (Select-String -Path k8s/backend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
+                    throw "Variable substitution failed in backend deployment"
+                }
+                if (Select-String -Path k8s/frontend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
+                    throw "Variable substitution failed in frontend deployment"
+                }
+            """
         }
     }
 }
