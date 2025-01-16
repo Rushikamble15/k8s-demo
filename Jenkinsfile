@@ -36,7 +36,7 @@ pipeline {
             }
         }
 
-        stage('Push Docker Images') {
+  stage('Push Docker Images') {
             steps {
                 script {
                     // Log in to Docker Hub using Jenkins credentials
@@ -50,39 +50,18 @@ pipeline {
                 }
             }
         }
-        
-      stage('Update Kubernetes Deployment') {
-    steps {
-        script {
-            // Update backend deployment image
-            powershell """
-                \$backendYaml = Get-Content k8s/backend/deployment.yaml -Raw
-                \$backendUpdated = \$backendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-backend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}'
-                \$backendUpdated | Set-Content k8s/backend/deployment.yaml -Force
 
-                \$frontendYaml = Get-Content k8s/frontend/deployment.yaml -Raw
-                \$frontendUpdated = \$frontendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-frontend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}'
-                \$frontendUpdated | Set-Content k8s/frontend/deployment.yaml -Force
-
-                # Print the updated content for verification
-                Write-Host "Updated backend deployment YAML:"
-                Get-Content k8s/backend/deployment.yaml
-                Write-Host "Updated frontend deployment YAML:"
-                Get-Content k8s/frontend/deployment.yaml
-
-                # Verify the substitutions
-                if (Select-String -Path k8s/backend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
-                    throw "Variable substitution failed in backend deployment"
+        stage('Update Kubernetes Deployment') {
+            steps {
+                script {
+                    // Replace ${DOCKER_REGISTRY} and ${BUILD_TAG} in the Kubernetes YAML files using PowerShell
+                    powershell """
+                        (Get-Content k8s/backend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-backend:.*', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
+                        (Get-Content k8s/frontend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-frontend:.*', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
+                    """
                 }
-                if (Select-String -Path k8s/frontend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
-                    throw "Variable substitution failed in frontend deployment"
-                }
-            """
+            }
         }
-    }
-}
-
-
 
         stage('Deploy to Kubernetes') {
             steps {
