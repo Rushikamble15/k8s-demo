@@ -36,10 +36,10 @@ pipeline {
             }
         }
 
-  stage('Push Docker Images') {
+        stage('Push Docker Images to Docker Hub') {
             steps {
                 script {
-                    // Log in to Docker Hub using Jenkins credentials
+                    // Log in to Docker Hub
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         bat "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
                     }
@@ -68,12 +68,6 @@ pipeline {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
                     script {
                         bat """
-                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/frontend/deployment.yaml"
-                            powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml"
-                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/backend/deployment.yaml"
-                            powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml"
-                            
-
                             kubectl apply -f k8s/mysql/secret.yaml
                             kubectl apply -f k8s/mysql/deployment.yaml
                             kubectl apply -f k8s/mysql/service.yaml
