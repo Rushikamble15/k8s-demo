@@ -51,26 +51,28 @@ pipeline {
             }
         }
         
-        stage('Update Kubernetes Deployment') {
+       stage('Update Kubernetes Deployment') {
     steps {
         script {
-            // Replace image names in deployment.yaml for both frontend and backend
+            // Replace backend image name with the correct Docker Hub image and tag
             powershell """
                 # Replace backend image with the correct tag
-                (Get-Content k8s/backend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-backend:.*', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
-                
+                (Get-Content k8s/backend/deployment.yaml) -replace 'docker.io/todo-backend:.*', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
+
                 # Replace frontend image with the correct tag
-                (Get-Content k8s/frontend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-frontend:.*', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
-                
+                (Get-Content k8s/frontend/deployment.yaml) -replace 'docker.io/todo-frontend:.*', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
+
                 # Debug: Print updated files
                 Write-Host "Updated backend deployment YAML"
                 Get-Content k8s/backend/deployment.yaml
+
                 Write-Host "Updated frontend deployment YAML"
                 Get-Content k8s/frontend/deployment.yaml
             """
         }
     }
 }
+
 
 
         stage('Deploy to Kubernetes') {
