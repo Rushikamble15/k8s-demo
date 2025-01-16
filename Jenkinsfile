@@ -2,17 +2,20 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USERNAME = 'rushikesh151999' // Docker Hub username
-        DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
-        DOCKER_CREDENTIALS = credentials('docker-hub-cred') // Jenkins credentials for Docker Hub
-        KUBE_CONFIG = credentials('kubernetes-config') // Kubernetes config for kubectl
-        BUILD_TAG = "v${BUILD_NUMBER}" // Automatically assigned version tag
+        DOCKER_USERNAME = 'rushikesh151999'
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_CREDENTIALS = credentials('docker-hub-cred')
+        KUBE_CONFIG = credentials('kubernetes-config')
+        BUILD_TAG = "v${BUILD_NUMBER}"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/Rushikamble15/k8s-demo.git'
+                git branch: 'main',
+                    changelog: false,
+                    poll: false,
+                    url: 'https://github.com/Rushikamble15/k8s-demo.git'
             }
         }
 
@@ -39,50 +42,47 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 script {
-                    // Log in to Docker Hub using Jenkins credentials
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-hub-cred',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )]) {
                         bat "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
                     }
 
-                    // Push images to Docker Hub
                     bat "docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
                     bat "docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
                 }
             }
         }
-        
-      stage('Update Kubernetes Deployment') {
-    steps {
-        script {
-            // Update backend deployment image
-            powershell """
-                \$backendYaml = Get-Content k8s/backend/deployment.yaml -Raw
-                \$backendUpdated = \$backendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-backend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}'
-                \$backendUpdated | Set-Content k8s/backend/deployment.yaml -Force
 
-                \$frontendYaml = Get-Content k8s/frontend/deployment.yaml -Raw
-                \$frontendUpdated = \$frontendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-frontend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}'
-                \$frontendUpdated | Set-Content k8s/frontend/deployment.yaml -Force
+        stage('Update Kubernetes Deployment') {
+            steps {
+                script {
+                    powershell """
+                        \$backendYaml = Get-Content k8s/backend/deployment.yaml -Raw
+                        \$backendUpdated = \$backendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-backend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}'
+                        \$backendUpdated | Set-Content k8s/backend/deployment.yaml -Force
 
-                # Print the updated content for verification
-                Write-Host "Updated backend deployment YAML:"
-                Get-Content k8s/backend/deployment.yaml
-                Write-Host "Updated frontend deployment YAML:"
-                Get-Content k8s/frontend/deployment.yaml
+                        \$frontendYaml = Get-Content k8s/frontend/deployment.yaml -Raw
+                        \$frontendUpdated = \$frontendYaml -replace '\\$\\{DOCKER_REGISTRY\\}/todo-frontend:\\$\\{BUILD_TAG\\}', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}'
+                        \$frontendUpdated | Set-Content k8s/frontend/deployment.yaml -Force
 
-                # Verify the substitutions
-                if (Select-String -Path k8s/backend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
-                    throw "Variable substitution failed in backend deployment"
+                        Write-Host "Updated backend deployment YAML:"
+                        Get-Content k8s/backend/deployment.yaml
+                        Write-Host "Updated frontend deployment YAML:"
+                        Get-Content k8s/frontend/deployment.yaml
+
+                        if (Select-String -Path k8s/backend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
+                            throw "Variable substitution failed in backend deployment"
+                        }
+                        if (Select-String -Path k8s/frontend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
+                            throw "Variable substitution failed in frontend deployment"
+                        }
+                    """
                 }
-                if (Select-String -Path k8s/frontend/deployment.yaml -Pattern '\\$\\{DOCKER_REGISTRY\\}|\\$\\{BUILD_TAG\\}') {
-                    throw "Variable substitution failed in frontend deployment"
-                }
-            """
+            }
         }
-    }
-}
-
-
 
         stage('Deploy to Kubernetes') {
             steps {
@@ -93,7 +93,6 @@ pipeline {
                             powershell -Command "(Get-Content k8s/frontend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml"
                             powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${DOCKER_USERNAME}', '${DOCKER_USERNAME}' | Set-Content k8s/backend/deployment.yaml"
                             powershell -Command "(Get-Content k8s/backend/deployment.yaml) -replace '\\\${BUILD_TAG}', '${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml"
-                            
 
                             kubectl apply -f k8s/mysql/secret.yaml
                             kubectl apply -f k8s/mysql/deployment.yaml
@@ -125,7 +124,6 @@ pipeline {
 
     post {
         always {
-            // Remove old frontend images (excluding the current build)
             bat """
                 docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Repository}}:{{.Tag}}" | ForEach-Object {
                     if ($_ -ne '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}') {
@@ -133,7 +131,6 @@ pipeline {
                     }
                 }
                 
-                // Remove old backend images (excluding the current build)
                 docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Repository}}:{{.Tag}}" | ForEach-Object {
                     if ($_ -ne '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}') {
                         docker rmi $_
