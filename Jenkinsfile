@@ -36,6 +36,21 @@ pipeline {
             }
         }
 
+        stage('Push Docker Images') {
+            steps {
+                script {
+                    // Log in to Docker Hub using Jenkins credentials
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        bat "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
+                    }
+
+                    // Push images to Docker Hub
+                    bat "docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
+                    bat "docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
+                }
+            }
+        }
+        
         stage('Update Kubernetes Deployment') {
             steps {
                 script {
