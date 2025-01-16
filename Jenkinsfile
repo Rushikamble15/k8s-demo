@@ -56,19 +56,19 @@ pipeline {
         script {
             // Replace backend image name with the correct Docker Hub image and tag
             powershell """
-                # Replace backend image with the correct tag
-                (Get-Content k8s/backend/deployment.yaml) -replace 'docker.io/todo-backend:.*', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
+    # Update backend deployment image
+    (Get-Content k8s/backend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-backend:.*', '${env.DOCKER_USERNAME}/todo-backend:${env.BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
 
-                # Replace frontend image with the correct tag
-                (Get-Content k8s/frontend/deployment.yaml) -replace 'docker.io/todo-frontend:.*', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
+    # Update frontend deployment image
+    (Get-Content k8s/frontend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-frontend:.*', '${env.DOCKER_USERNAME}/todo-frontend:${env.BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
 
-                # Debug: Print updated files
-                Write-Host "Updated backend deployment YAML"
-                Get-Content k8s/backend/deployment.yaml
+    # Debugging: Print the updated YAML files
+    Write-Host "Updated backend deployment YAML"
+    Get-Content k8s/backend/deployment.yaml
+    Write-Host "Updated frontend deployment YAML"
+    Get-Content k8s/frontend/deployment.yaml
+"""
 
-                Write-Host "Updated frontend deployment YAML"
-                Get-Content k8s/frontend/deployment.yaml
-            """
         }
     }
 }
