@@ -47,6 +47,10 @@ pipeline {
                     // Push images to Docker Hub
                     bat "docker push ${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
                     bat "docker push ${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
+
+                      // Capture pushed image details in environment variables
+                    env.FRONTEND_IMAGE = "${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
+                    env.BACKEND_IMAGE = "${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
                 }
             }
         }
