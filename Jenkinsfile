@@ -141,7 +141,7 @@ pipeline {
             }
         }
     }
-}
+
         stage('Deploy Monitoring') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
