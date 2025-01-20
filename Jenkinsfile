@@ -96,7 +96,7 @@ pipeline {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
                     script {
                         bat """
-                             kubectl apply -f k8s/mysql/mysql-secret.yaml
+                             kubectl apply -f k8s/mysql/secret.yaml
                     kubectl apply -f k8s/mysql/mysql-pvc.yaml
                     kubectl apply -f k8s/mysql/mysql-init-script.yaml  # Ensure init script is created
                     kubectl apply -f k8s/mysql/deployment.yaml
