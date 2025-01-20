@@ -56,23 +56,21 @@ pipeline {
         }
 
       stage('Update Kubernetes Deployment') {
-    steps {
-        script {
-            // Replace placeholders in Kubernetes YAML files
-            powershell """
-                # Update frontend image in YAML
-                (Get-Content k8s/frontend/deployment.yaml) `
-                    -replace '\\${DOCKER_USERNAME}/todo-frontend:.*', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}' `
-                    | Set-Content k8s/frontend/deployment.yaml
-                
-                # Update backend image in YAML
-                (Get-Content k8s/backend/deployment.yaml) `
-                    -replace '\\${DOCKER_USERNAME}/todo-backend:.*', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}' `
-                    | Set-Content k8s/backend/deployment.yaml
-            """
+            steps {
+                script {
+                    // Replace placeholders in Kubernetes YAML files
+                    powershell """
+                        (Get-Content k8s/backend/deployment.yaml) `
+                            -replace '\\${DOCKER_USERNAME}/todo-backend:.*', '${env.BACKEND_IMAGE}' `
+                            | Set-Content k8s/backend/deployment.yaml
+                        
+                        (Get-Content k8s/frontend/deployment.yaml) `
+                            -replace '\\${DOCKER_USERNAME}/todo-frontend:.*', '${env.FRONTEND_IMAGE}' `
+                            | Set-Content k8s/frontend/deployment.yaml
+                    """
+                }
+            }
         }
-    }
-}
 
 
 
