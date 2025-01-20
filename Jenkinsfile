@@ -54,17 +54,18 @@ pipeline {
        stage('Update Kubernetes Deployment') {
     steps {
         script {
-            // Use PowerShell to update the Docker image tags in the deployment YAML files
+            // Replace ${DOCKER_REGISTRY} and ${BUILD_TAG} in the Kubernetes YAML files using PowerShell
             powershell """
-                // Replace the image tag for the backend in the deployment.yaml file
-                (Get-Content k8s/backend/deployment.yaml) -replace '\${DOCKER_REGISTRY}/todo-backend:.*', '\${DOCKER_USERNAME}/todo-backend:\${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
-
-                // Replace the image tag for the frontend in the deployment.yaml file
-                (Get-Content k8s/frontend/deployment.yaml) -replace '\${DOCKER_REGISTRY}/todo-frontend:.*', '\${DOCKER_USERNAME}/todo-frontend:\${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
+                # Replace the image tag for the backend in the deployment YAML file
+                (Get-Content k8s/backend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-backend:.*', '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}' | Set-Content k8s/backend/deployment.yaml
+                
+                # Replace the image tag for the frontend in the deployment YAML file
+                (Get-Content k8s/frontend/deployment.yaml) -replace '${DOCKER_REGISTRY}/todo-frontend:.*', '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}' | Set-Content k8s/frontend/deployment.yaml
             """
         }
     }
 }
+
 
 
 
