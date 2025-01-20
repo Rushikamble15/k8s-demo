@@ -51,27 +51,38 @@ pipeline {
                       // Capture pushed image details in environment variables
                     env.FRONTEND_IMAGE = "${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}"
                     env.BACKEND_IMAGE = "${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}"
+             // Echo the values of the environment variables to verify
+                    echo "Frontend image: ${env.FRONTEND_IMAGE}"
+                    echo "Backend image: ${env.BACKEND_IMAGE}"
                 }
             }
         }
 
-      stage('Update Kubernetes Deployment') {
+        stage('Update Kubernetes Deployment') {
             steps {
                 script {
-                    // Replace placeholders in Kubernetes YAML files
+                    // Verify the environment variables again using echo
+                    echo "Frontend image in Update stage: ${env.FRONTEND_IMAGE}"
+                    echo "Backend image in Update stage: ${env.BACKEND_IMAGE}"
+
+                    // Replace placeholders in Kubernetes YAML files using PowerShell
                     powershell """
-                        (Get-Content k8s/backend/deployment.yaml) `
-                            -replace '\\${DOCKER_USERNAME}/todo-backend:.*', '${env.BACKEND_IMAGE}' `
-                            | Set-Content k8s/backend/deployment.yaml
-                        
-                        (Get-Content k8s/frontend/deployment.yaml) `
-                            -replace '\\${DOCKER_USERNAME}/todo-frontend:.*', '${env.FRONTEND_IMAGE}' `
-                            | Set-Content k8s/frontend/deployment.yaml
+                        \$frontendImage = '${env.FRONTEND_IMAGE}'
+                        \$backendImage = '${env.BACKEND_IMAGE}'
+
+                        # Echo the values to confirm substitution
+                        Write-Host "Frontend Image: \$frontendImage"
+                        Write-Host "Backend Image: \$backendImage"
+
+                        # Replace image tag for frontend
+                        (Get-Content k8s/frontend/deployment.yaml) -replace 'docker.io/todo-frontend:.*', \$frontendImage | Set-Content k8s/frontend/deployment.yaml
+
+                        # Replace image tag for backend
+                        (Get-Content k8s/backend/deployment.yaml) -replace 'docker.io/todo-backend:.*', \$backendImage | Set-Content k8s/backend/deployment.yaml
                     """
                 }
             }
         }
-
 
 
 
