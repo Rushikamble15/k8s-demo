@@ -90,27 +90,58 @@ pipeline {
 
 
 
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                withKubeConfig([credentialsId: 'kubernetes-config']) {
-                    script {
+    stage('Deploy to Kubernetes') {
+        steps {
+            withKubeConfig([credentialsId: 'kubernetes-config']) {
+                script {
+                    // Debug: Check directory contents
+                    bat 'dir k8s\\mysql'
+                    
+                    try {
+                        // MySQL Dependencies
                         bat """
-                             kubectl apply -f k8s/mysql/secret.yaml
-                    kubectl apply -f k8s/mysql/mysql-pvc.yaml
-                    kubectl apply -f k8s/mysql/mysql-init-script.yaml  # Ensure init script is created
-                    kubectl apply -f k8s/mysql/deployment.yaml
-                    kubectl apply -f k8s/mysql/service.yaml
-                    kubectl apply -f k8s/backend/deployment.yaml
-                    kubectl apply -f k8s/backend/service.yaml
-                    kubectl apply -f k8s/frontend/deployment.yaml
-                    kubectl apply -f k8s/frontend/service.yaml
+                            echo "Applying MySQL resources..."
+                            kubectl apply -f k8s/mysql/secret.yaml
+                            kubectl apply -f k8s/mysql/mysql-pvc.yaml
+                            kubectl apply -f k8s/mysql/mysql-init-script.yaml
+                            kubectl apply -f k8s/mysql/deployment.yaml
+                            kubectl apply -f k8s/mysql/service.yaml
+                            
+                            echo "Verifying MySQL resources..."
+                            kubectl get configmap mysql-init-script
+                            kubectl get pvc mysql-pvc
+                            kubectl get secret mysql-secret
+                            
+                            echo "Waiting for MySQL pod..."
+                            kubectl wait --for=condition=ready pod -l app=mysql --timeout=60s
+                            
+                            echo "Applying Backend resources..."
+                            kubectl apply -f k8s/backend/deployment.yaml
+                            kubectl apply -f k8s/backend/service.yaml
+                            
+                            echo "Applying Frontend resources..."
+                            kubectl apply -f k8s/frontend/deployment.yaml
+                            kubectl apply -f k8s/frontend/service.yaml
                         """
+                    } catch (Exception e) {
+                        echo "Deployment failed: ${e.getMessage()}"
+                        
+                        // Debug information on failure
+                        bat """
+                            echo "Debug Information:"
+                            kubectl get pods
+                            kubectl get configmap
+                            kubectl get pvc
+                            kubectl describe pod -l app=mysql
+                        """
+                        
+                        error("Deployment failed")
                     }
                 }
             }
         }
-
+    }
+}
         stage('Deploy Monitoring') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
