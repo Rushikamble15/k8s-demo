@@ -66,17 +66,14 @@ pipeline {
                     echo "Backend image in Update stage: ${env.BACKEND_IMAGE}"
 
                     // Replace placeholders in Kubernetes YAML files using PowerShell
-                    powershell """
-    \$frontendImage = '${env.FRONTEND_IMAGE}'
-    \$backendImage = '${env.BACKEND_IMAGE}'
+                   powershell """
+    # Set the variables explicitly for PowerShell
+    \$DOCKER_USERNAME = '${env.DOCKER_USERNAME}'
+    \$BUILD_TAG = '${env.BUILD_TAG}'
 
-    # Echo the values to confirm substitution
-    Write-Host "Frontend Image: \$frontendImage"
-    Write-Host "Backend Image: \$backendImage"
-
-    # Perform the replacement
-    (Get-Content k8s/frontend/deployment.yaml) -replace 'docker.io/todo-frontend:.*', \$frontendImage | Set-Content k8s/frontend/deployment.yaml
-    (Get-Content k8s/backend/deployment.yaml) -replace 'docker.io/todo-backend:.*', \$backendImage | Set-Content k8s/backend/deployment.yaml
+    # Replace image in the YAML files
+    (Get-Content k8s/frontend/deployment.yaml) -replace 'docker.io/todo-frontend:.*', '\$DOCKER_USERNAME/todo-frontend:\$BUILD_TAG' | Set-Content k8s/frontend/deployment.yaml
+    (Get-Content k8s/backend/deployment.yaml) -replace 'docker.io/todo-backend:.*', '\$DOCKER_USERNAME/todo-backend:\$BUILD_TAG' | Set-Content k8s/backend/deployment.yaml
 
     # Debug: Output the updated YAML files to verify the changes
     Write-Host "Updated Frontend Deployment YAML:"
@@ -85,6 +82,7 @@ pipeline {
     Write-Host "Updated Backend Deployment YAML:"
     Get-Content k8s/backend/deployment.yaml
 """
+
 
                 }
             }
