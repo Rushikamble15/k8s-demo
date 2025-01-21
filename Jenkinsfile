@@ -101,7 +101,7 @@ pipeline {
                         // MySQL Dependencies
                         bat """
                             echo "Applying MySQL resources..."
-                            kubectl apply -f k8s/mysql/mysql-secret.yaml
+                            kubectl apply -f k8s/mysql/mysql-secret.yaml  || echo "Failed to create mysql-secret"
                             kubectl apply -f k8s/mysql/mysql-pvc.yaml
                             kubectl apply -f k8s/mysql/mysql-init-script.yaml
                             kubectl apply -f k8s/mysql/deployment.yaml
