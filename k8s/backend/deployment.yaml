@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: rushikesh151999/todo-backend:v136
+        image: rushikesh151999/todo-backend:v138
         ports:
         - containerPort: 3001
         env:
