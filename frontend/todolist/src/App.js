@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
+const BACKEND_URL = 'http://localhost:30001'; // Fixed backend URL
+
 function App() {
   const [todos, setTodos] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -11,7 +13,7 @@ function App() {
 
   const fetchTodos = async () => {
     try {
-      const response = await fetch('http://backend:3001/api/todos'); // Update API URL
+      const response = await fetch(`${BACKEND_URL}/api/todos`); // Updated URL
       console.log('response: ', response);
       const data = await response.json();
       setTodos(data);
@@ -25,7 +27,7 @@ function App() {
     if (!inputValue.trim()) return;
 
     try {
-      const response = await fetch('http://backend:3001/api/todos', { // Update API URL
+      const response = await fetch(`${BACKEND_URL}/api/todos`, { // Updated URL
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +46,7 @@ function App() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`http://backend:3001/api/todos/${id}`, { // Update API URL
+      const response = await fetch(`${BACKEND_URL}/api/todos/${id}`, { // Updated URL
         method: 'DELETE',
       });
 
