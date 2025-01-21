@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: backend
 spec:
-  type: NodePort  # Change to NodePort
+  type: NodePort
   ports:
   - port: 3001
     targetPort: 3001
-    nodePort: 30001  
+    nodePort: 30001  # Fixed port
   selector:
     app: backend
