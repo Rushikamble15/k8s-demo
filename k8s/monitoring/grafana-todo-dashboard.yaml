@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-todo-dashboard
+data:
+  todo-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Todo Application Dashboard",
+        "panels": [
+          {
+            "title": "API Request Rate",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{route=~\"/api/todos.*\"}[5m])",
+                "legendFormat": "{{method}} {{route}}"
+              }
+            ]
+          },
+          {
+            "title": "Response Times",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(http_response_duration_seconds_sum[5m]) / rate(http_response_duration_seconds_count[5m])",
+                "legendFormat": "Average Response Time"
+              }
+            ]
+          },
+          {
+            "title": "HTTP Error Rate",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{status_code=~\"5.*\"}[5m])) / sum(rate(http_requests_total[5m])) * 100",
+                "legendFormat": "Error Rate %"
+              }
+            ]
+          },
+          {
+            "title": "Node.js Memory Usage",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "targets": [
+              {
+                "expr": "process_resident_memory_bytes{job=\"todo-backend\"}",
+                "legendFormat": "Memory Usage"
+              }
+            ]
+          }
+        ],
+        "refresh": "10s",
+        "schemaVersion": 16,
+        "version": 1
+      }
+    }
+
