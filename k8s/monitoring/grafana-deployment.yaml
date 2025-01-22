@@ -19,18 +19,31 @@ spec:
         - containerPort: 3000
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: "admin"
+          value: admin
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
         - name: GF_AUTH_ANONYMOUS_ENABLED
           value: "true"
         volumeMounts:
-        - name: dashboard-config
-          mountPath: /etc/grafana/provisioning/dashboards
         - name: datasource-config
           mountPath: /etc/grafana/provisioning/datasources
+        - name: dashboard-config
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboard-data
+          mountPath: /var/lib/grafana/dashboards
       volumes:
-      - name: dashboard-config
-        configMap:
-          name: grafana-todo-dashboard
       - name: datasource-config
         configMap:
           name: grafana-datasource
+      - name: dashboard-config
+        configMap:
+          name: grafana-todo-dashboard
+          items:
+            - key: dashboards.yaml
+              path: dashboards.yaml
+      - name: dashboard-data
+        configMap:
+          name: grafana-todo-dashboard
+          items:
+            - key: todo-dashboard.json
+              path: todo-dashboard.json
