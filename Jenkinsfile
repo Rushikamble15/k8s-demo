@@ -142,20 +142,35 @@ pipeline {
         }
     }
 
-        stage('Deploy Monitoring') {
-            steps {
-                withKubeConfig([credentialsId: 'kubernetes-config']) {
-                    bat '''
-                        kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
-                        kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
-                        kubectl apply -f k8s/monitoring/prometheus-service.yaml
-                        kubectl apply -f k8s/monitoring/grafana-deployment.yaml
-                        kubectl apply -f k8s/monitoring/grafana-service.yaml
-                    '''
-                }
-            }
+       stage('Deploy Monitoring') {
+    steps {
+        withKubeConfig([credentialsId: 'kubernetes-config']) {
+            bat '''
+                # Create monitoring namespace if it doesn't exist
+                kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+                
+                # Apply monitoring configurations
+                kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
+                kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
+                kubectl apply -f k8s/monitoring/prometheus-service.yaml
+                kubectl apply -f k8s/monitoring/grafana-datasource.yaml
+                kubectl apply -f k8s/monitoring/grafana-todo-dashboard.yaml
+                kubectl apply -f k8s/monitoring/grafana-deployment.yaml
+                kubectl apply -f k8s/monitoring/grafana-service.yaml
+                
+                # Wait for services to be ready
+                kubectl wait --for=condition=ready pod -l app=grafana --timeout=60s
+                kubectl wait --for=condition=ready pod -l app=prometheus --timeout=60s
+                
+                # Get service URLs
+                echo "Grafana URL:"
+                kubectl get svc grafana -o jsonpath="{.spec.ports[0].nodePort}"
+                echo "Prometheus URL:"
+                kubectl get svc prometheus -o jsonpath="{.spec.ports[0].nodePort}"
+            '''
         }
     }
+}
 
     post {
         always {
