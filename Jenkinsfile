@@ -58,35 +58,35 @@ pipeline {
             }
         }
 
-        stage('Update Kubernetes Deployment') {
-            steps {
-                script {
-                    // Verify the environment variables again using echo
-                    echo "Frontend image in Update stage: ${env.FRONTEND_IMAGE}"
-                    echo "Backend image in Update stage: ${env.BACKEND_IMAGE}"
+//         stage('Update Kubernetes Deployment') {
+//             steps {
+//                 script {
+//                     // Verify the environment variables again using echo
+//                     echo "Frontend image in Update stage: ${env.FRONTEND_IMAGE}"
+//                     echo "Backend image in Update stage: ${env.BACKEND_IMAGE}"
 
-                    // Replace placeholders in Kubernetes YAML files using PowerShell
-                   powershell """
-    # Set the variables explicitly for PowerShell
-    \$DOCKER_USERNAME = '${env.DOCKER_USERNAME}'
-    \$BUILD_TAG = '${env.BUILD_TAG}'
+//                     // Replace placeholders in Kubernetes YAML files using PowerShell
+//                    powershell """
+//     # Set the variables explicitly for PowerShell
+//     \$DOCKER_USERNAME = '${env.DOCKER_USERNAME}'
+//     \$BUILD_TAG = '${env.BUILD_TAG}'
 
-    # Replace image in the YAML files
-    (Get-Content k8s/frontend/deployment.yaml) -replace 'docker.io/todo-frontend:.*', '\$DOCKER_USERNAME/todo-frontend:\$BUILD_TAG' | Set-Content k8s/frontend/deployment.yaml
-    (Get-Content k8s/backend/deployment.yaml) -replace 'docker.io/todo-backend:.*', '\$DOCKER_USERNAME/todo-backend:\$BUILD_TAG' | Set-Content k8s/backend/deployment.yaml
+//     # Replace image in the YAML files
+//     (Get-Content k8s/frontend/deployment.yaml) -replace 'docker.io/todo-frontend:.*', '\$DOCKER_USERNAME/todo-frontend:\$BUILD_TAG' | Set-Content k8s/frontend/deployment.yaml
+//     (Get-Content k8s/backend/deployment.yaml) -replace 'docker.io/todo-backend:.*', '\$DOCKER_USERNAME/todo-backend:\$BUILD_TAG' | Set-Content k8s/backend/deployment.yaml
 
-    # Debug: Output the updated YAML files to verify the changes
-    Write-Host "Updated Frontend Deployment YAML:"
-    Get-Content k8s/frontend/deployment.yaml
+//     # Debug: Output the updated YAML files to verify the changes
+//     Write-Host "Updated Frontend Deployment YAML:"
+//     Get-Content k8s/frontend/deployment.yaml
 
-    Write-Host "Updated Backend Deployment YAML:"
-    Get-Content k8s/backend/deployment.yaml
-"""
+//     Write-Host "Updated Backend Deployment YAML:"
+//     Get-Content k8s/backend/deployment.yaml
+// """
 
 
-                }
-            }
-        }
+//                 }
+//             }
+//         }
 
 
 
