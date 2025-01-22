@@ -142,11 +142,11 @@ pipeline {
         }
     }
 
-       stage('Deploy Monitoring') {
-    steps {
-        withKubeConfig([credentialsId: 'kubernetes-config']) {
-            bat '''
-                # Create monitoring namespace if it doesn't exist
+      stage('Deploy Monitoring') {
+            steps {
+                withKubeConfig([credentialsId: 'kubernetes-config']) {
+                    bat '''
+                        # Create monitoring namespace if it doesn't exist
                 kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
                 
                 # Apply monitoring configurations
@@ -168,9 +168,11 @@ pipeline {
                 echo "Prometheus URL:"
                 kubectl get svc prometheus -o jsonpath="{.spec.ports[0].nodePort}"
             '''
+                }
+            }
         }
     }
-}
+
 
     post {
         always {
