@@ -24,4 +24,8 @@ data:
             replacement: $1:$2
             target_label: __address__
 
-  
+      - job_name: 'backend-service'
+        metrics_path: /metrics
+        scheme: http
+        static_configs:
+          - targets: ['backend:3001']
