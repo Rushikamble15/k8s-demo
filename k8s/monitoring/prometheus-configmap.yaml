@@ -23,3 +23,10 @@ data:
             regex: ([^:]+)(?::\d+)?;(\d+)
             replacement: $1:$2
             target_label: __address__
+
+         # Scrape configuration for the backend service
+      - job_name: 'backend-service'
+        metrics_path: /metrics
+        scheme: http
+        static_configs:
+          - targets: ['backend:3001']
