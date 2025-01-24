@@ -157,6 +157,9 @@ pipeline {
                 kubectl apply -f k8s/monitoring/grafana-todo-dashboard.yaml
                 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
                 kubectl apply -f k8s/monitoring/grafana-service.yaml
+                kubectl apply -f k8s/monitoring/kube-state-metrics.yaml
+                kubectl apply -f k8s/monitoring/prometheus-config-updated.yaml           
+                kubectl apply -f k8s/monitoring/grafana-kubernetes-dashboard.yaml
                 
                 # Wait for services to be ready
                 kubectl wait --for=condition=ready pod -l app=grafana --timeout=60s
