@@ -18,22 +18,22 @@ spec:
         ports:
         - containerPort: 3000
         env:
+        - name: GF_SECURITY_ADMIN_USER
+          value: "admin"
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: admin
-        - name: GF_USERS_ALLOW_SIGN_UP
-          value: "false"
+          value: "admin"
         - name: GF_AUTH_ANONYMOUS_ENABLED
           value: "true"
         - name: GF_AUTH_ANONYMOUS_ORG_ROLE
-          value: "Admin" 
-        - name: GF_AUTH_DISABLE_LOGIN_FORM
-          value: "false"
+          value: "Admin"
+        - name: GF_INSTALL_PLUGINS
+          value: "grafana-piechart-panel"
         volumeMounts:
         - name: datasource-config
           mountPath: /etc/grafana/provisioning/datasources
         - name: dashboard-config
           mountPath: /etc/grafana/provisioning/dashboards
-        - name: dashboard-data
+        - name: k8s-dashboard
           mountPath: /var/lib/grafana/dashboards
       volumes:
       - name: datasource-config
@@ -41,13 +41,46 @@ spec:
           name: grafana-datasource
       - name: dashboard-config
         configMap:
-          name: grafana-todo-dashboard
-          items:
-            - key: dashboards.yaml
-              path: dashboards.yaml
-      - name: dashboard-data
+          name: grafana-dashboards-config
+      - name: k8s-dashboard
         configMap:
-          name: grafana-todo-dashboard
-          items:
-            - key: todo-dashboard.json
-              path: todo-dashboard.json
+          name: k8s-dashboard
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-dashboard
+data:
+  k8s-dashboard.json: |
+    {
+      "id": null,
+      "title": "Kubernetes Cluster Monitoring",
+      "uid": "k8s-monitoring",
+      "tags": [ "kubernetes" ],
+      "timezone": "browser",
+      "schemaVersion": 16,
+      "version": 0,
+      "refresh": "10s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": []
+    }
