@@ -167,11 +167,6 @@ pipeline {
                 kubectl wait --for=condition=ready pod -l app=prometheus 
                 kubectl wait --for=condition=ready pod -l app=node-exporter
                 
-                # Get service URLs
-                echo "Grafana URL:"
-                kubectl get svc grafana -o jsonpath="{.spec.ports[0].nodePort}"
-                echo "Prometheus URL:"
-                kubectl get svc prometheus -o jsonpath="{.spec.ports[0].nodePort}"
             '''
                 }
             }
