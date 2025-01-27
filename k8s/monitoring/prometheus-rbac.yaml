@@ -17,17 +17,20 @@ rules:
   - endpoints
   - pods
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+  - configmaps
+  - nodes/stats
+  verbs: ["get"]
 - apiGroups:
-  - extensions
   - networking.k8s.io
   resources:
   - ingresses
   verbs: ["get", "list", "watch"]
-- apiGroups:
-  - ""
+- apiGroups: [""]
   resources:
-  - configmaps
-  - nodes/stats
+  - nodes/metrics
+  - nodes/proxy
   verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
