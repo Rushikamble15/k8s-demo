@@ -158,13 +158,14 @@ pipeline {
                 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
                 kubectl apply -f k8s/monitoring/grafana-service.yaml
                 kubectl apply -f k8s/monitoring/kube-state-metrics.yaml
-                kubectl apply -f k8s/monitoring/prometheus-config-updated.yaml           
                 kubectl apply -f k8s/monitoring/grafana-kubernetes-dashboard.yaml
                 kubectl apply -f k8s/monitoring/prometheus-rbac.yaml
+                kubectl apply -f k8s/monitoring/node-exporter.yaml
                 
                 # Wait for services to be ready
-                kubectl wait --for=condition=ready pod -l app=grafana --timeout=20s
-                kubectl wait --for=condition=ready pod -l app=prometheus --timeout=20s
+                kubectl wait --for=condition=ready pod -l app=grafana 
+                kubectl wait --for=condition=ready pod -l app=prometheus 
+                kubectl wait --for=condition=ready pod -l app=node-exporter
                 
                 # Get service URLs
                 echo "Grafana URL:"
