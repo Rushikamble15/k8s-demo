@@ -39,25 +39,158 @@ metadata:
 data:
   kubernetes-dashboard.json: |
     {
+      "annotations": {},
+      "editable": true,
+      "gnetId": 15661,
+      "graphTooltip": 0,
       "id": null,
-      "title": "Kubernetes Cluster",
-      "uid": "k8s-cluster-metrics",
-      "tags": [ "kubernetes" ],
-      "timezone": "browser",
-      "schemaVersion": 16,
-      "version": 0,
-      "refresh": "10s"
+      "links": [],
+      "panels": [],
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["kubernetes"],
+      "templating": {
+        "list": [
+          {
+            "allValue": null,
+            "current": {},
+            "datasource": "Prometheus",
+            "definition": "label_values(kube_node_info, node)",
+            "description": null,
+            "error": null,
+            "hide": 0,
+            "includeAll": false,
+            "label": null,
+            "multi": false,
+            "name": "node",
+            "options": [],
+            "query": {
+              "query": "label_values(kube_node_info, node)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 1,
+            "type": "query"
+          }
+        ]
+      },
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Kubernetes / Nodes",
+      "uid": "kubernetes-nodes-dashboard",
+      "version": 1
     }
   todo-dashboard.json: |
     {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
       "id": null,
-      "title": "Todo Application Metrics",
-      "uid": "todo-metrics",
-      "tags": [ "todo" ],
-      "timezone": "browser",
-      "schemaVersion": 16,
-      "version": 0,
-      "refresh": "10s"
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "title": "HTTP Request Rate",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["todo"],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Todo Application Dashboard",
+      "uid": "todo-app",
+      "version": 1,
+      "weekStart": ""
     }
 ---
 apiVersion: apps/v1
