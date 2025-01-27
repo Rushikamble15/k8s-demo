@@ -16,66 +16,107 @@ data:
         path: /var/lib/grafana/dashboards
   todo-dashboard.json: |
     {
-      "dashboard": {
-        "id": null,
-        "title": "Todo Application Metrics",
-        "timezone": "browser",
-        "refresh": "5s",
-        "rows": [
-          {
-            "title": "API Metrics",
-            "panels": [
-              {
-                "title": "HTTP Request Rate",
-                "type": "graph",
-                "span": 6,
-                "targets": [
-                  {
-                    "expr": "rate(http_requests_total{job=\"todo-backend\"}[5m])",
-                    "legendFormat": "{{method}} {{route}}"
-                  }
-                ]
-              },
-              {
-                "title": "Response Times",
-                "type": "graph",
-                "span": 6,
-                "targets": [
-                  {
-                    "expr": "rate(http_response_duration_seconds_sum[5m]) / rate(http_response_duration_seconds_count[5m])",
-                    "legendFormat": "Average Response Time"
-                  }
-                ]
-              }
-            ]
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          {
-            "title": "Application Metrics",
-            "panels": [
-              {
-                "title": "Memory Usage",
-                "type": "graph",
-                "span": 6,
-                "targets": [
-                  {
-                    "expr": "process_resident_memory_bytes{job=\"todo-backend\"}",
-                    "legendFormat": "Memory Usage"
-                  }
-                ]
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
               },
-              {
-                "title": "Error Rate",
-                "type": "graph",
-                "span": 6,
-                "targets": [
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
                   {
-                    "expr": "sum(rate(http_requests_total{status_code=~\"5.*\"}[5m])) / sum(rate(http_requests_total[5m])) * 100",
-                    "legendFormat": "Error Rate %"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
-            ]
-          }
-        ]
-      }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "title": "HTTP Request Rate",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Todo Application Dashboard",
+      "uid": "todo-app",
+      "version": 1,
+      "weekStart": ""
     }
