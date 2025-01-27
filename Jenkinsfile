@@ -158,7 +158,7 @@ pipeline {
                 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
                 kubectl apply -f k8s/monitoring/grafana-service.yaml
                 kubectl apply -f k8s/monitoring/kube-state-metrics.yaml
-                kubectl apply -f k8s/monitoring/grafana-kubernetes-dashboard.yaml
+                kubectl apply -f k8s/monitoring/grafana-dashboard.yaml
                 kubectl apply -f k8s/monitoring/prometheus-rbac.yaml
                 kubectl apply -f k8s/monitoring/node-exporter.yaml
                 
