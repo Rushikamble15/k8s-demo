@@ -145,28 +145,34 @@ pipeline {
       stage('Deploy Monitoring') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config']) {
-                    bat '''
-                        # Create monitoring namespace if it doesn't exist
-                kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
-                
-                # Apply monitoring configurations
+                   bat '''
+                # Apply configurations in the correct order
+                kubectl apply -f k8s/monitoring/prometheus-rbac.yaml
                 kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
                 kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
                 kubectl apply -f k8s/monitoring/prometheus-service.yaml
+                
+                # Apply Grafana configurations
                 kubectl apply -f k8s/monitoring/grafana-datasource.yaml
-                kubectl apply -f k8s/monitoring/grafana-todo-dashboard.yaml
+                kubectl apply -f k8s/monitoring/grafana-dashboards-provider.yaml
+                kubectl apply -f k8s/monitoring/grafana-dashboards.yaml
                 kubectl apply -f k8s/monitoring/grafana-deployment.yaml
                 kubectl apply -f k8s/monitoring/grafana-service.yaml
+                
+                # Apply supporting monitoring components
                 kubectl apply -f k8s/monitoring/kube-state-metrics.yaml
-                kubectl apply -f k8s/monitoring/grafana-dashboard.yaml
-                kubectl apply -f k8s/monitoring/prometheus-rbac.yaml
                 kubectl apply -f k8s/monitoring/node-exporter.yaml
                 
-                # Wait for services to be ready
-                kubectl wait --for=condition=ready pod -l app=grafana 
-                kubectl wait --for=condition=ready pod -l app=prometheus 
-                kubectl wait --for=condition=ready pod -l app=node-exporter
-                
+                # Wait for deployments
+                kubectl rollout status deployment/grafana
+                kubectl rollout status deployment/prometheus
+            '''
+            
+            // Add verification step
+            bat '''
+                echo "Verifying Grafana configuration..."
+                kubectl exec -it $(kubectl get pods -l app=grafana -o jsonpath="{.items[0].metadata.name}") -- ls -l /var/lib/grafana/dashboards/
+                kubectl exec -it $(kubectl get pods -l app=grafana -o jsonpath="{.items[0].metadata.name}") -- ls -l /etc/grafana/provisioning/dashboards/
             '''
                 }
             }
