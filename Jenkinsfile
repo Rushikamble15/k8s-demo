@@ -171,27 +171,8 @@ pipeline {
             }
         }
     }
-
-
-    post {
-        always {
-            // Remove old frontend images (excluding the current build)
-            bat """
-                docker images ${DOCKER_USERNAME}/todo-frontend --format "{{.Repository}}:{{.Tag}}" | ForEach-Object {
-                    if ($_ -ne '${DOCKER_USERNAME}/todo-frontend:${BUILD_TAG}') {
-                        docker rmi $_
-                    }
-                }
-                
-                // Remove old backend images (excluding the current build)
-                docker images ${DOCKER_USERNAME}/todo-backend --format "{{.Repository}}:{{.Tag}}" | ForEach-Object {
-                    if ($_ -ne '${DOCKER_USERNAME}/todo-backend:${BUILD_TAG}') {
-                        docker rmi $_
-                    }
-                }
-            """
-        }
-
+    
+      post {
         success {
             bat 'echo "Pipeline completed successfully!"'
         }
