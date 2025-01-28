@@ -1,4 +1,3 @@
-apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus
@@ -12,7 +11,7 @@ spec:
       labels:
         app: prometheus
     spec:
-      serviceAccountName: prometheus
+      serviceAccountName: prometheus 
       containers:
       - name: prometheus
         image: prom/prometheus
@@ -21,14 +20,7 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/prometheus/
-        - name: time-sync
-          mountPath: /etc/localtime
-          readOnly: true  # Optional: set readOnly to prevent changes
       volumes:
       - name: config
         configMap:
           name: prometheus-config
-      - name: time-sync
-        hostPath:
-          path: /etc/localtime
-          type: File
