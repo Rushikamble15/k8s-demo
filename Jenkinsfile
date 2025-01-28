@@ -171,8 +171,13 @@ pipeline {
             // Add verification step
             bat '''
                 echo "Verifying Grafana configuration..."
-                kubectl exec -it $(kubectl get pods -l app=grafana -o jsonpath="{.items[0].metadata.name}") -- ls -l /var/lib/grafana/dashboards/
-                kubectl exec -it $(kubectl get pods -l app=grafana -o jsonpath="{.items[0].metadata.name}") -- ls -l /etc/grafana/provisioning/dashboards/
+
+                # Fetch pod name for Grafana
+                for /f "delims=" %%i in ('kubectl get pods -l app=grafana -o jsonpath="{.items[0].metadata.name}"') do set POD_NAME=%%i
+
+                # Verify Grafana provisioning directories
+                kubectl exec -it %POD_NAME% -- ls -l /var/lib/grafana/dashboards/
+                kubectl exec -it %POD_NAME% -- ls -l /etc/grafana/provisioning/dashboards/
             '''
                 }
             }
