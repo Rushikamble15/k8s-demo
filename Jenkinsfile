@@ -167,18 +167,6 @@ pipeline {
                 kubectl rollout status deployment/grafana
                 kubectl rollout status deployment/prometheus
             '''
-            
-            // Add verification step
-            bat '''
-               echo "Verifying Grafana configuration..."
-
-                REM Fetch pod name for Grafana
-                for /f "delims=" %%i in ('kubectl get pods -l app=grafana -o jsonpath="{.items[0].metadata.name}"') do set POD_NAME=%%i
-
-                REM Verify Grafana provisioning directories
-                kubectl exec -it %POD_NAME% -- ls -l /var/lib/grafana/dashboards/
-                kubectl exec -it %POD_NAME% -- ls -l /etc/grafana/provisioning/dashboards/
-            '''
                 }
             }
         }
