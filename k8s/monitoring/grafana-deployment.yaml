@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: grafana
-          image: grafana/grafana
+          image: grafana/grafana:latest
           ports:
             - containerPort: 3000
           env:
@@ -22,65 +22,24 @@ spec:
               value: "admin"
             - name: GF_SECURITY_ADMIN_PASSWORD
               value: "admin"
-            - name: GF_AUTH_ANONYMOUS_ENABLED
-              value: "false"
-            - name: GF_AUTH_BASIC_ENABLED
-              value: "true"
             - name: GF_INSTALL_PLUGINS
-              value: "grafana-piechart-panel,grafana-clock-panel"
+              value: "grafana-piechart-panel"
+            - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
+              value: "/var/lib/grafana/dashboards/k8s-cluster-dashboard.json"
           volumeMounts:
             - name: datasource-config
               mountPath: /etc/grafana/provisioning/datasources
-            - name: dashboard-config
+            - name: dashboard-provisioning
               mountPath: /etc/grafana/provisioning/dashboards
-            - name: k8s-dashboard
+            - name: grafana-dashboards
               mountPath: /var/lib/grafana/dashboards
       volumes:
         - name: datasource-config
           configMap:
             name: grafana-datasource
-        - name: dashboard-config
+        - name: dashboard-provisioning
           configMap:
-            name: grafana-dashboards-config
-        - name: k8s-dashboard
+            name: grafana-dashboards-provider
+        - name: grafana-dashboards
           configMap:
-            name: k8s-dashboard
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-dashboards-config
-data:
-  provider.yaml: |
-    apiVersion: 1
-    providers:
-      - name: 'default'
-        orgId: 1
-        folder: ''
-        type: file
-        disableDeletion: false
-        editable: true
-        options:
-          path: /var/lib/grafana/dashboards
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: k8s-dashboard
-data:
-  k8s-dashboard.json: |
-    {
-      "id": null,
-      "title": "Kubernetes Cluster Monitoring",
-      "uid": "k8s-monitoring",
-      "tags": ["kubernetes"],
-      "timezone": "browser",
-      "schemaVersion": 16,
-      "version": 0,
-      "refresh": "10s",
-      "time": {
-        "from": "now-1h",
-        "to": "now"
-      },
-      "panels": []
-    }
+            name: grafana-dashboards
